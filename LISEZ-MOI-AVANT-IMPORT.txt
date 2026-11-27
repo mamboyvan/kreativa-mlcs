@@ -1,0 +1,16 @@
+KREATIVA — FICHIERS RESTAURÉS
+
+Cette archive contient une structure complète du projet React/Vite retrouvée dans les fichiers précédemment fournis.
+
+IMPORTANT : le contenu de cette archive n’a pas encore passé une compilation npm complète dans cet environnement. Ne remplacez pas votre dépôt principal sans sauvegarder son état actuel.
+
+PROCÉDURE CONSEILLÉE
+1. Téléchargez et décompressez cette archive sur votre ordinateur.
+2. Ouvrez https://github.com/mamboyvan/kreativa-mlcs
+3. Vérifiez que vous êtes connecté au bon compte et ouvrez la branche main.
+4. Avant tout remplacement, créez une sauvegarde ou une branche de test.
+5. Importez les fichiers et dossiers du projet en conservant exactement leur arborescence (notamment src/, public/, les fichiers package*.json, vite.config.ts et les fichiers tsconfig).
+6. Ne téléversez pas le dossier .git et ne supprimez pas de fichiers de configuration existants sans vérification.
+7. Attendez la fin du déploiement et vérifiez le site.
+
+Cette archive est une base de restauration. Elle ne contient pas de secrets ni de clés API à configurer. L’authentification et les données stockées uniquement dans le navigateur ne constituent pas une protection serveur.

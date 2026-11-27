@@ -1,38 +1,73 @@
-# KREATIVA — plateforme de vente de produits numériques
+# React + TypeScript + Vite
 
-Projet frontend construit avec React, TypeScript et Vite.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Contenu
-- Catalogue et fiches produits
-- Boutiques publiques et espaces vendeurs
-- Inscription, connexion et espace compte
-- Panier et parcours de commande
-- Interface d'administration
-- Assistant et composants d'interface
+Currently, two official plugins are available:
 
-## Prérequis
-- Node.js 20 ou supérieur
-- npm
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Installation
-```bash
-npm install
-npm run dev
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## Vérifications
-```bash
-npm run lint
-npm run build
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-## Déploiement
-Le projet utilise Vite. La commande de build est `npm run build` et le dossier de sortie est `dist`.
-Le fichier `vercel.json` configure le routage des applications monopages sur Vercel.
-
-## État technique à connaître
-La version fournie utilise actuellement `localStorage` dans le navigateur pour stocker les données de démonstration et la session. Les comptes, boutiques, commandes et paniers ne sont donc pas encore synchronisés entre plusieurs appareils et ne constituent pas un backend de production.
-
-Les moyens de paiement affichés dans l'interface sont des options prévues dans le parcours utilisateur ; leur présence dans le code ne prouve pas qu'une passerelle de paiement réelle est connectée.
-
-Avant une mise en production, prévoir un backend sécurisé, une base de données partagée, une authentification serveur, des règles d'accès et l'intégration réelle d'un prestataire de paiement.
