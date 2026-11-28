@@ -3,6 +3,7 @@ name: Verify Kreativa
 on:
   push:
     branches:
+      - main
       - repair/kreativa-structure
   pull_request:
     branches:
