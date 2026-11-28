@@ -165,13 +165,21 @@ export function detecterRegion(): string | undefined {
 
 // ------------------------------------------------------------------ sessions
 
+let sidMemoire: string | null = null
+
 export function sessionCourante(): string {
-  let sid = sessionStorage.getItem(K_SID)
-  if (!sid) {
-    sid = 'sess_' + alea(8)
-    sessionStorage.setItem(K_SID, sid)
+  try {
+    let sid = window.sessionStorage.getItem(K_SID)
+    if (!sid) {
+      sid = 'sess_' + alea(8)
+      window.sessionStorage.setItem(K_SID, sid)
+    }
+    return sid
+  } catch {
+    // Certains navigateurs ou modes privés bloquent sessionStorage.
+    if (!sidMemoire) sidMemoire = 'sess_' + alea(8)
+    return sidMemoire
   }
-  return sid
 }
 
 export const masquerSid = (sid: string) => (sid.length > 11 ? sid.slice(0, 11) + '••••' : sid)
