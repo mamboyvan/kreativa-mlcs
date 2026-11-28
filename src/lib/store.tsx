@@ -17,7 +17,6 @@ type StoreValue = {
   inscrire: (p: { nom: string; email: string; motDePasse: string; role: Role }) => Promise<Res>
   connecter: (email: string, motDePasse: string) => Promise<Res>
   deconnecter: () => void
-  reinitialiser: (email: string, nouveau: string) => Promise<Res>
   majProfil: (p: Partial<Pick<User, 'nom' | 'telephone' | 'bio' | 'ville'>>) => Res
   changerMotDePasse: (actuel: string, nouveau: string) => Promise<Res>
   // shops
@@ -159,17 +158,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         track('deconnexion', { userId: user?.id ?? null })
         definirUtilisateurCourant(null)
         save({ ...d, sessionUserId: null })
-      },
-
-      async reinitialiser(email, nouveau) {
-        const u = d.users.find((x) => x.email.toLowerCase() === email.trim().toLowerCase())
-        if (nouveau.length < 8 || !/[A-Z]/.test(nouveau) || !/[0-9]/.test(nouveau))
-          return { ok: false, message: 'Mot de passe trop faible : 8 caractères minimum, une majuscule et un chiffre.' }
-        if (!u) return { ok: true, message: 'Si un compte existe, les instructions ont été envoyées.' }
-        const salt = genSalt()
-        const hash = await hashPassword(nouveau, salt)
-        save({ ...d, users: d.users.map((x) => (x.id === u.id ? { ...x, salt, hash } : x)) })
-        return { ok: true, message: 'Mot de passe mis à jour. Vous pouvez vous connecter.' }
       },
 
       majProfil(p) {
