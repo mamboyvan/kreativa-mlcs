@@ -1,17 +1,20 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 type Props = { children: ReactNode }
-type State = { hasError: boolean }
+type State = { hasError: boolean; errorMessage: string }
 
 export default class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false }
+  state: State = { hasError: false, errorMessage: '' }
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true }
+  static getDerivedStateFromError(error: Error): State {
+    return {
+      hasError: true,
+      errorMessage: error?.message ? String(error.message).slice(0, 300) : 'Erreur inconnue dans le navigateur.',
+    }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Keep details in the browser console for diagnosis without exposing them to visitors.
+    // Keep the full technical details in the browser console for diagnosis.
     console.error('Erreur inattendue dans Kreativa :', error, info.componentStack)
   }
 
@@ -23,8 +26,12 @@ export default class ErrorBoundary extends Component<Props, State> {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#FF6A1F]">KREATIVA</p>
             <h1 className="mt-4 text-2xl font-bold">Une erreur est survenue</h1>
             <p className="mt-3 text-sm leading-6 text-white/65">
-              La page n’a pas pu s’afficher correctement. Rechargez l’application. Si le problème persiste, réessayez un peu plus tard.
+              La page n’a pas pu s’afficher correctement. Le détail ci-dessous nous aidera à corriger le problème.
             </p>
+            <div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-4 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#FFB078]">Détail de l’erreur</p>
+              <p className="mt-2 break-words font-mono text-xs leading-5 text-white/80">{this.state.errorMessage}</p>
+            </div>
             <button
               type="button"
               onClick={() => window.location.reload()}
