@@ -1,22 +1,10 @@
 import type { DB, Product, Shop, User } from './types'
-import { hashPassword, genSalt } from './crypto'
 
 const t = (jours: number) => Date.now() - jours * 86400000
 
-async function mkUser(nom: string, email: string, pw: string, role: User['role'], id: string, extra: Partial<User> = {}): Promise<User> {
-  const salt = genSalt()
-  const hash = await hashPassword(pw, salt)
-  return { id, nom, email, salt, hash, role, createdAt: t(120), ...extra }
-}
-
 export async function buildSeed(): Promise<DB> {
-  const users: User[] = await Promise.all([
-    mkUser('Équipe KREATIVA', 'admin@kreativa.ci', 'Admin2026!', 'admin', 'u_admin', { ville: 'Abidjan', bio: 'Administration de la plateforme.' }),
-    mkUser('Awa Koné', 'awa@kreativa.ci', 'Vendeur2026!', 'vendeur', 'u_awa', { ville: 'Abidjan', telephone: '+225 07 00 00 01', bio: 'Formatrice en marketing digital.' }),
-    mkUser('Yao Serge', 'serge@kreativa.ci', 'Vendeur2026!', 'vendeur', 'u_serge', { ville: 'Yamoussoukro', telephone: '+225 05 00 00 02', bio: 'Designer graphique et photographe.' }),
-    mkUser('Fatou Diallo', 'fatou@kreativa.ci', 'Vendeur2026!', 'vendeur', 'u_fatou', { ville: 'Dakar', telephone: '+221 77 000 00 03', bio: 'Consultante en finance et entrepreneuriat.' }),
-    mkUser('Ibrahim Touré', 'ibrahim@kreativa.ci', 'Acheteur2026!', 'acheteur', 'u_ibra', { ville: 'Bouaké' }),
-  ])
+  // No public demo credentials: accounts must be created by each visitor.
+  const users: User[] = []
 
   const shops: Shop[] = [
     {
