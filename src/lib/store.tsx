@@ -30,7 +30,16 @@ function lireDBLocale(): DB | null {
       ...parsed,
       signalements: Array.isArray(parsed.signalements) ? parsed.signalements : [],
       settings: { ...DB_VIDE.settings, ...(parsed.settings ?? {}) },
-      // Chaque panier doit être une liste d'identifiants. Des anciennes données\n      // locales mal formées ne doivent jamais faire planter le rendu React.\n      cart: parsed.cart && typeof parsed.cart === 'object' && !Array.isArray(parsed.cart)\n        ? Object.fromEntries(\n            Object.entries(parsed.cart).map(([key, value]) => [\n              key,\n              Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [],\n            ]),\n          )\n        : {},
+      // Chaque panier doit être une liste d'identifiants. Des anciennes données
+      // locales mal formées ne doivent jamais faire planter le rendu React.
+      cart: parsed.cart && typeof parsed.cart === 'object' && !Array.isArray(parsed.cart)
+        ? Object.fromEntries(
+            Object.entries(parsed.cart).map(([key, value]) => [
+              key,
+              Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [],
+            ]),
+          )
+        : {},
     }
   } catch {
     // Le navigateur peut refuser l'accès au stockage ou contenir des données corrompues.
@@ -130,7 +139,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const user = d.users.find((u) => u.id === d.sessionUserId) ?? null
     const cartKey = user ? user.id : 'invite'
-    const cartValue = d.cart?.[cartKey]\n    const cartIds = Array.isArray(cartValue) ? cartValue : []
+    const cartValue = d.cart?.[cartKey]
+    const cartIds = Array.isArray(cartValue) ? cartValue : []
     const panier = cartIds
       .map((id) => d.products.find((p) => p.id === id))
       .filter((p): p is Product => !!p && p.statut === 'publie')
