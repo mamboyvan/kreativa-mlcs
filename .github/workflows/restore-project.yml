@@ -1,0 +1,100 @@
+name: Restore Kreativa project structure
+
+on:
+  push:
+    branches:
+      - repair/kreativa-structure
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: repair/kreativa-structure
+          fetch-depth: 0
+
+      - name: Restore source files from the project archive
+        shell: bash
+        run: |
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          import shutil
+
+          candidates = [
+              Path("kreativa-mlcs-ready-for-github.zip"),
+              Path("kreativa-mlcs-corrige.zip"),
+              Path("agon-agent_1-1e3e15c0.zip"),
+          ]
+          valid = []
+          for archive in candidates:
+              if not archive.exists():
+                  continue
+              try:
+                  with zipfile.ZipFile(archive) as z:
+                      names = z.namelist()
+                      src_app = next((n for n in names if n.rstrip("/").endswith("src/App.tsx")), None)
+                      if src_app:
+                          prefix = src_app[:-len("src/App.tsx")]
+                          count = sum(1 for n in names if n.startswith(prefix) and not n.endswith("/"))
+                          valid.append((count, archive, prefix))
+              except zipfile.BadZipFile:
+                  pass
+
+          if not valid:
+              raise SystemExit("Aucune archive valide contenant src/App.tsx n'a été trouvée.")
+
+          count, archive, prefix = max(valid, key=lambda item: item[0])
+          print(f"Archive retenue : {archive} ({count} fichiers)")
+          target = Path(".")
+          with zipfile.ZipFile(archive) as z:
+              for info in z.infolist():
+                  name = info.filename
+                  if not name.startswith(prefix):
+                      continue
+                  relative = name[len(prefix):]
+                  if not relative or relative.endswith("/"):
+                      continue
+                  dest = (target / relative).resolve()
+                  if target.resolve() not in dest.parents:
+                      raise SystemExit(f"Chemin d'archive interdit : {name}")
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  with z.open(info) as src, open(dest, "wb") as out:
+                      shutil.copyfileobj(src, out)
+
+          required = [
+              "src/main.tsx", "src/App.tsx", "src/lib/store.tsx",
+              "src/components/Protected.tsx", "src/pages/Home.tsx",
+              "public/favicon.svg", "package.json", "package-lock.json"
+          ]
+          missing = [p for p in required if not Path(p).is_file()]
+          if missing:
+              raise SystemExit("Fichiers requis absents après restauration : " + ", ".join(missing))
+
+          # Remove stale duplicate entry files left at repository root.
+          for stale in ["App.tsx", "App.css", "main.tsx", "index.css"]:
+              p = Path(stale)
+              if p.exists():
+                  p.unlink()
+          PY
+
+      - name: Install dependencies and verify production build
+        run: npm ci && npm run build
+
+      - name: Commit restored project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Restore complete Kreativa source structure [skip ci]"
+          git push origin HEAD:repair/kreativa-structure
