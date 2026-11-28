@@ -1,12 +1,12 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 type Props = { children: ReactNode }
-type State = { hasError: boolean; errorMessage: string }
+type State = { hasError: boolean; errorMessage: string; diagnosticStack: string }
 
 export default class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, errorMessage: '' }
+  state: State = { hasError: false, errorMessage: '', diagnosticStack: '' }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return {
       hasError: true,
       errorMessage: error?.message ? String(error.message).slice(0, 300) : 'Erreur inconnue dans le navigateur.',
@@ -14,6 +14,11 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    const diagnosticStack = [error?.stack, info?.componentStack]
+      .filter(Boolean)
+      .join('\n\n')
+      .slice(0, 5000)
+    this.setState({ diagnosticStack })
     console.error('Erreur inattendue dans Kreativa :', error, info.componentStack)
   }
 
@@ -31,6 +36,12 @@ export default class ErrorBoundary extends Component<Props, State> {
               <p className="text-xs font-semibold uppercase tracking-wider text-[#FFB078]">Détail de l’erreur</p>
               <p className="mt-2 break-words font-mono text-xs leading-5 text-white/80">{this.state.errorMessage}</p>
             </div>
+            {this.state.diagnosticStack && (
+              <details className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-left">
+                <summary className="cursor-pointer text-xs font-semibold text-[#FFB078]">Informations techniques pour le diagnostic</summary>
+                <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap break-words font-mono text-[10px] leading-4 text-white/65">{this.state.diagnosticStack}</pre>
+              </details>
+            )}
             <button
               type="button"
               onClick={() => window.location.reload()}
