@@ -329,41 +329,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Enregistrement d'une confirmation de paiement. Dans l'architecture cible,
       // cette fonction est l'équivalent du traitement de la notification (webhook)
       // du prestataire, exécuté côté serveur après vérification de la signature.
-      confirmerPaiement(orderId, p) {
-        if (!user || user.role !== 'admin')
-          return { ok: false, message: "Seul le serveur de paiement (espace administrateur) peut confirmer un règlement." }
-        const o = d.orders.find((x) => x.id === orderId)
-        if (!o) return { ok: false, message: 'Commande introuvable.' }
-        if (o.statut === 'payee') return { ok: false, message: 'Notification ignorée : commande déjà payée (idempotence).' }
-        if (o.statut !== 'en_attente') return { ok: false, message: `Commande au statut « ${o.statut} » : confirmation refusée.` }
-        if (d.orders.some((x) => x.transactionId && x.transactionId === p.transactionId)) {
-          track('erreur', { meta: { contexte: 'webhook', motif: 'transaction déjà traitée', commande: o.reference } })
-          return { ok: false, message: 'Notification ignorée : identifiant de transaction déjà traité.' }
+      confirmerPaiement(_orderId, _p) {
+        return {
+          ok: false,
+          message: "Paiement non confirmé : aucun webhook serveur vérifié n’est configuré. Ne marquez pas cette commande comme payée depuis le navigateur.",
         }
-        if (p.devise !== 'XOF') {
-          track('erreur', { meta: { contexte: 'webhook', motif: 'devise non conforme', commande: o.reference } })
-          return { ok: false, message: 'Devise non conforme : XOF attendu.' }
-        }
-        if (Math.round(p.montant) !== Math.round(o.total)) {
-          track('erreur', { meta: { contexte: 'webhook', motif: 'montant non conforme', commande: o.reference } })
-          return { ok: false, message: `Montant non conforme : ${p.montant} reçu, ${o.total} attendu.` }
-        }
-        const next: Order = {
-          ...o, statut: 'payee', transactionId: p.transactionId, updatedAt: Date.now(),
-          journal: [...o.journal, { at: Date.now(), message: `Paiement confirmé et vérifié — transaction ${p.transactionId}` }],
-        }
-        const ids = new Set(o.items.map((i) => i.productId))
-        save({
-          ...d,
-          orders: d.orders.map((x) => (x.id === orderId ? next : x)),
-          products: d.products.map((pr) => (ids.has(pr.id) ? { ...pr, ventes: pr.ventes + 1 } : pr)),
-        })
-        track('paiement_confirme', {
-          userId: o.buyerId,
-          meta: { reference: o.reference, montant: o.total, transaction: p.transactionId },
-        })
-        track('admin_action', { meta: { action: 'validation notification paiement', commande: o.reference } })
-        return { ok: true, message: 'Paiement vérifié. Accès aux fichiers débloqué pour l’acheteur.' }
       },
 
       marquerEchec(orderId, raison) {
