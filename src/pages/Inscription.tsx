@@ -29,15 +29,25 @@ export default function Inscription() {
 
   const envoyer = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (charge) return
     setErreur('')
     if (mdp !== mdp2) return setErreur('Les mots de passe ne correspondent pas.')
     if (!cgu) return setErreur('Vous devez accepter les conditions d’utilisation.')
     setCharge(true)
-    const r = await inscrire({ nom, email, motDePasse: mdp, role })
-    setCharge(false)
-    if (!r.ok) return setErreur(r.message ?? 'Erreur')
-    toast('Compte créé avec succès. Bienvenue sur KREATIVA !', 'ok')
-    nav(role === 'vendeur' ? '/creer-boutique' : '/compte')
+    try {
+      const r = await inscrire({ nom, email, motDePasse: mdp, role })
+      if (!r.ok) {
+        setErreur(r.message ?? 'La création du compte a échoué.')
+        return
+      }
+      toast('Compte créé avec succès. Bienvenue sur KREATIVA !', 'ok')
+      nav(role === 'vendeur' ? '/creer-boutique' : '/compte')
+    } catch (error) {
+      console.error('Échec de la création du compte :', error)
+      setErreur('Impossible de créer le compte pour le moment. Vérifiez votre navigateur et réessayez.')
+    } finally {
+      setCharge(false)
+    }
   }
 
   return (
@@ -90,10 +100,10 @@ export default function Inscription() {
           </div>
 
           <form onSubmit={envoyer} className="mt-5 space-y-4">
-            <Field label="Nom complet" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Awa Koné" />
-            <Field label="Adresse e-mail" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.ci" />
-            <Field label="Mot de passe" type="password" required value={mdp} onChange={(e) => setMdp(e.target.value)} placeholder="••••••••" />
-            <Field label="Confirmer le mot de passe" type="password" required value={mdp2} onChange={(e) => setMdp2(e.target.value)} placeholder="••••••••" />
+            <Field label="Nom complet" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Awa Koné" autoComplete="name" />
+            <Field label="Adresse e-mail" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.ci" autoComplete="email" />
+            <Field label="Mot de passe" type="password" required value={mdp} onChange={(e) => setMdp(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
+            <Field label="Confirmer le mot de passe" type="password" required value={mdp2} onChange={(e) => setMdp2(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
 
             <ul className="grid grid-cols-2 gap-1.5">
               {regles.map((r) => (
@@ -108,7 +118,7 @@ export default function Inscription() {
               J’accepte les conditions d’utilisation et la politique de confidentialité de KREATIVA.
             </label>
 
-            {erreur && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-[13.5px] text-red-300">{erreur}</p>}
+            {erreur && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-[13.5px] text-red-300">{erreur}</p>}
 
             <Btn type="submit" full size="lg" disabled={charge}>
               <UserPlus size={17} /> {charge ? 'Création…' : 'Créer mon compte'}
