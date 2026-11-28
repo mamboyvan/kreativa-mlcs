@@ -7,6 +7,37 @@ import { definirUtilisateurCourant, track } from './analytics'
 
 const KEY = 'kreativa.db.v1'
 
+const DB_VIDE: DB = {
+  users: [], shops: [], products: [], orders: [], signalements: [],
+  settings: { commission: 8, prestataire: 'CinetPay', modePaiement: 'non_connecte', nomPlateforme: 'KREATIVA' },
+  sessionUserId: null, cart: {},
+}
+
+function lireDBLocale(): DB | null {
+  try {
+    const raw = window.localStorage.getItem(KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<DB>
+    if (
+      !parsed ||
+      !Array.isArray(parsed.users) ||
+      !Array.isArray(parsed.shops) ||
+      !Array.isArray(parsed.products) ||
+      !Array.isArray(parsed.orders)
+    ) return null
+    return {
+      ...DB_VIDE,
+      ...parsed,
+      signalements: Array.isArray(parsed.signalements) ? parsed.signalements : [],
+      settings: { ...DB_VIDE.settings, ...(parsed.settings ?? {}) },
+      cart: parsed.cart && typeof parsed.cart === 'object' ? parsed.cart : {},
+    }
+  } catch {
+    // Le navigateur peut refuser l'accès au stockage ou contenir des données corrompues.
+    return null
+  }
+}
+
 type Res = { ok: boolean; message?: string; data?: any }
 
 type StoreValue = {
@@ -50,23 +81,32 @@ type StoreValue = {
 const Ctx = createContext<StoreValue | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [db, setDb] = useState<DB | null>(null)
+  // Lire le stockage dès l'initialisation évite un écran d'attente inutile.
+  // Si le navigateur bloque le stockage, l'application démarre quand même.
+  const [db, setDb] = useState<DB | null>(() => lireDBLocale())
 
   useEffect(() => {
-    const raw = localStorage.getItem(KEY)
-    if (raw) {
+    if (db) return
+    let actif = true
+
+    const initialiser = async () => {
       try {
-        setDb(JSON.parse(raw) as DB)
-        return
+        const seed = await buildSeed()
+        try {
+          window.localStorage.setItem(KEY, JSON.stringify(seed))
+        } catch {
+          // Le stockage peut être désactivé ou saturé : la session reste utilisable en mémoire.
+        }
+        if (actif) setDb(seed)
       } catch {
-        /* reconstruction */
+        // Ne jamais laisser l'application bloquée indéfiniment sur « Chargement ».
+        if (actif) setDb({ ...DB_VIDE, cart: {} })
       }
     }
-    buildSeed().then((seed) => {
-      localStorage.setItem(KEY, JSON.stringify(seed))
-      setDb(seed)
-    })
-  }, [])
+
+    void initialiser()
+    return () => { actif = false }
+  }, [db])
 
   useEffect(() => {
     definirUtilisateurCourant(db?.sessionUserId ?? null)
@@ -74,7 +114,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const save = (next: DB) => {
     setDb(next)
-    localStorage.setItem(KEY, JSON.stringify(next))
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(next))
+    } catch {
+      // L'état reste actif pendant cette visite même si le navigateur bloque le stockage.
+    }
   }
 
   const value = useMemo<StoreValue>(() => {
